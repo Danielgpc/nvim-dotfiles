@@ -1,4 +1,3 @@
-
 # Vim/Neovim Mappings & Configuration (Updated for LSP era)
 
 ## Key Mappings (all work in Neovim)
@@ -54,6 +53,11 @@
 - conform.nvim + nvim-lint (linting & formatting)
 - nvim-dap + dap-ui + mason-nvim-dap (debugging)
 - which-key.nvim
+
+## UI & Theme Customizations
+- **Theme:** Gruvbox (Dark mode)
+- **Floating Windows:** Custom highlight overrides applied to `NormalFloat` and `FloatBorder` so popup menus seamlessly match the Gruvbox background instead of defaulting to unreadable colors.
+- **Borders:** "Rounded" borders globally applied to Which-Key menus, LSP Hover documentation (`K`), and LSP Signature Help.
 
 ## .clangd for C/C++
 Place in project root – fully replaces VS Code `c_cpp_properties.json`.

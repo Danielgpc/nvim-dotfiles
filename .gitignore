@@ -2,3 +2,4 @@ autoload/
 plugged/
 backup/
 *.bak
+.DS_Store/

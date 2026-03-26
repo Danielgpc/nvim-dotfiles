@@ -1,24 +1,20 @@
 -- =============================================================================
--- Modern Neovim Configuration (ported from your old vimrc + VS Code-like LSP)
+-- Modern Neovim Configuration (with enhanced LSP utilities)
 -- Features:
---   • Full LSP + autocompletion (mason + lspconfig + nvim-cmp) – VS Code experience
---   • Linting & formatting on all languages (conform.nvim + nvim-lint)
---   • Debugging for C/C++, Python, etc. (nvim-dap + mason-nvim-dap)
---   • which-key.nvim (beautiful keybinding menu on <leader>)
---   • Mouse support for click & select
---   • All your old plugins kept (NERDTree, Gruvbox, airline, etc.)
---   • COC removed and replaced with modern Lua LSP stack
---   • QuickRun (code runner like VS Code Code Runner)
---   • .clangd support for C/C++ (project-specific config like c_cpp_properties.json)
+--   • Full LSP + autocompletion (mason + lspconfig + nvim-cmp)
+--   • Enhanced LSP utilities: hover, goto definition, declaration, references, etc.
+--   • Linting & formatting (conform + nvim-lint)
+--   • Debugging (nvim-dap)
+--   • which-key.nvim with LSP group
 -- =============================================================================
 
--- Leader must be set before any plugin loads keymaps
 vim.g.mapleader = " "
 
--- GENERAL SETTINGS (ported from your vimrc) -----------------------------------
-vim.opt.mouse = "a"                    -- Mouse support (click, select, drag)
+-- GENERAL SETTINGS -----------------------------------------------------------
+vim.opt.mouse = "a"
 vim.cmd("filetype plugin indent on")
 vim.cmd("syntax on")
+
 vim.opt.number = true
 vim.opt.cursorline = true
 vim.opt.shiftwidth = 4
@@ -45,7 +41,7 @@ vim.opt.undodir = config_dir .. "/backup"
 vim.opt.undofile = true
 vim.opt.undoreload = 10000
 
--- Bootstrap vim-plug (auto-installs on first launch after cloning)
+-- Bootstrap vim-plug
 local plug_path = config_dir .. "/autoload/plug.vim"
 if vim.fn.filereadable(plug_path) == 0 then
   vim.fn.system({
@@ -60,23 +56,22 @@ if vim.fn.filereadable(plug_path) == 0 then
   })
 end
 
--- PLUGINS (vim-plug) -----------------------------------------------------------
+-- PLUGINS --------------------------------------------------------------------
 vim.cmd([[
   call plug#begin('~/.config/nvim/plugged')
 
-    " Your original plugins (kept)
+    " Original plugins
     Plug 'preservim/nerdtree'
     Plug 'morhetz/gruvbox'
     Plug 'vim-airline/vim-airline'
     Plug 'ryanoasis/vim-devicons'
     Plug 'voldikss/vim-floaterm'
     Plug 'airblade/vim-gitgutter'
-    Plug 'Exafunction/windsurf.vim'
     Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
     Plug 'junegunn/fzf.vim'
     Plug 'thinca/vim-quickrun'
 
-    " === NEW: Modern VS Code-like LSP stack ===
+    " Modern LSP stack
     Plug 'williamboman/mason.nvim'
     Plug 'williamboman/mason-lspconfig.nvim'
     Plug 'neovim/nvim-lspconfig'
@@ -88,24 +83,23 @@ vim.cmd([[
     Plug 'L3MON4D3/LuaSnip'
     Plug 'saadparwaiz1/cmp_luasnip'
 
-    " === NEW: Linting & Formatting (full linting on all languages) ===
+    " Linting & Formatting
     Plug 'stevearc/conform.nvim'
     Plug 'mfussenegger/nvim-lint'
 
-    " === NEW: Debugging (for all languages) ===
+    " Debugging
     Plug 'mfussenegger/nvim-dap'
     Plug 'rcarriga/nvim-dap-ui'
     Plug 'nvim-neotest/nvim-nio'
     Plug 'jay-babu/mason-nvim-dap.nvim'
 
-    " === NEW: Which-Key (beautiful menu) ===
+    " Which-Key
     Plug 'folke/which-key.nvim'
 
   call plug#end()
 ]])
 
--- PLUGIN SETUP (Lua) ----------------------------------------------------------
--- Safe requires with fallback
+-- SAFE REQUIRE ---------------------------------------------------------------
 local function safe_require(module)
   local ok, result = pcall(require, module)
   if not ok then
@@ -115,7 +109,8 @@ local function safe_require(module)
   return result
 end
 
--- 1. which-key.nvim
+-- PLUGIN SETUP ---------------------------------------------------------------
+-- 1. Which-Key
 local wk = safe_require("which-key")
 if wk then
   wk.setup({
@@ -124,7 +119,7 @@ if wk then
   })
 end
 
--- 2. Mason (LSP installer)
+-- 2. Mason
 if safe_require("mason") then
   require("mason").setup()
 end
@@ -146,7 +141,7 @@ if safe_require("mason-nvim-dap") then
   })
 end
 
--- 3. nvim-cmp (autocompletion – VS Code style)
+-- 3. nvim-cmp
 local cmp = safe_require("cmp")
 local luasnip = safe_require("luasnip")
 if cmp and luasnip then
@@ -159,14 +154,22 @@ if cmp and luasnip then
       ["<C-e>"] = cmp.mapping.abort(),
       ["<CR>"] = cmp.mapping.confirm({ select = true }),
       ["<Tab>"] = cmp.mapping(function(fallback)
-        if cmp.visible() then cmp.select_next_item()
-        elseif luasnip.expand_or_jumpable() then luasnip.expand_or_jump()
-        else fallback() end
+        if cmp.visible() then
+          cmp.select_next_item()
+        elseif luasnip.expand_or_jumpable() then
+          luasnip.expand_or_jump()
+        else
+          fallback()
+        end
       end, { "i", "s" }),
       ["<S-Tab>"] = cmp.mapping(function(fallback)
-        if cmp.visible() then cmp.select_prev_item()
-        elseif luasnip.jumpable(-1) then luasnip.jump(-1)
-        else fallback() end
+        if cmp.visible() then
+          cmp.select_prev_item()
+        elseif luasnip.jumpable(-1) then
+          luasnip.jump(-1)
+        else
+          fallback()
+        end
       end, { "i", "s" }),
     }),
     sources = cmp.config.sources({
@@ -181,35 +184,58 @@ end
 local cmp_nvim_lsp = safe_require("cmp_nvim_lsp")
 local capabilities = (cmp_nvim_lsp and cmp_nvim_lsp.default_capabilities()) or {}
 
--- 4. LSP config (on_attach = keybindings + diagnostics)
+-- 4. ENHANCED LSP SETUP with rich utilities ----------------------------------
 local lspconfig = safe_require("lspconfig")
+
+-- === ADD THESE TWO LINES FOR LSP BORDERS ===
+vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
+vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
+-- ===========================================
+
 local on_attach = function(client, bufnr)
-  -- VS Code style LSP keybindings
   local buf = vim.lsp.buf
-  vim.keymap.set("n", "gd", buf.definition, { buffer = bufnr, desc = "Go to definition" })
-  vim.keymap.set("n", "gD", buf.declaration, { buffer = bufnr, desc = "Go to declaration" })
-  vim.keymap.set("n", "K", buf.hover, { buffer = bufnr, desc = "Hover documentation" })
-  vim.keymap.set("n", "<leader>ca", buf.code_action, { buffer = bufnr, desc = "Code action" })
-  vim.keymap.set("n", "<leader>cd", vim.diagnostic.open_float, { buffer = bufnr, desc = "Diagnostics" })
-  vim.keymap.set("n", "<leader>rn", buf.rename, { buffer = bufnr, desc = "Rename" })
-  vim.keymap.set("n", "gr", buf.references, { buffer = bufnr, desc = "Find references" })
+  local opts = { buffer = bufnr, silent = true }
+
+  -- === CORE LSP UTILITIES (VS Code style) ===
+  vim.keymap.set("n", "gd", buf.definition, vim.tbl_extend("force", opts, { desc = "Go to Definition" }))
+  vim.keymap.set("n", "gD", buf.declaration, vim.tbl_extend("force", opts, { desc = "Go to Declaration" }))
+  vim.keymap.set("n", "gi", buf.implementation, vim.tbl_extend("force", opts, { desc = "Go to Implementation" }))
+  vim.keymap.set("n", "gr", buf.references, vim.tbl_extend("force", opts, { desc = "Find References" }))
+  vim.keymap.set("n", "K", buf.hover, vim.tbl_extend("force", opts, { desc = "Hover Documentation" }))
+  vim.keymap.set("n", "<leader>rn", buf.rename, vim.tbl_extend("force", opts, { desc = "Rename Symbol" }))
+  vim.keymap.set("n", "<leader>ca", buf.code_action, vim.tbl_extend("force", opts, { desc = "Code Action" }))
+  vim.keymap.set("n", "<leader>cd", vim.diagnostic.open_float, vim.tbl_extend("force", opts, { desc = "Show Diagnostics" }))
+
+  -- Additional useful LSP utilities
+  vim.keymap.set("n", "<leader>cl", function() vim.lsp.codelens.run() end, vim.tbl_extend("force", opts, { desc = "Run CodeLens" }))
+  vim.keymap.set("n", "<leader>cf", function() vim.lsp.buf.format({ async = true }) end, vim.tbl_extend("force", opts, { desc = "Format Buffer" }))
+
+  -- Telescope-like LSP navigation (if you add telescope later)
+  vim.keymap.set("n", "<leader>ls", function() vim.lsp.buf.workspace_symbol() end, vim.tbl_extend("force", opts, { desc = "Workspace Symbols" }))
+
+  -- Diagnostic navigation
+  vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, vim.tbl_extend("force", opts, { desc = "Previous Diagnostic" }))
+  vim.keymap.set("n", "]d", vim.diagnostic.goto_next, vim.tbl_extend("force", opts, { desc = "Next Diagnostic" }))
 end
 
--- Configure each LSP server directly (setup_handlers removed in newer mason-lspconfig)
+-- Setup all LSP servers
 if lspconfig then
   local servers = {
     "lua_ls", "pyright", "clangd", "jsonls", "yamlls",
     "html", "cssls", "ts_ls", "bashls", "marksman",
   }
+
   for _, server_name in ipairs(servers) do
-    lspconfig[server_name].setup({
-      on_attach = on_attach,
-      capabilities = capabilities,
-    })
+    if lspconfig[server_name] then
+      lspconfig[server_name].setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+      })
+    end
   end
 end
 
--- 5. Conform (formatting) + nvim-lint (linting)
+-- 5. Conform + nvim-lint (unchanged)
 local conform = safe_require("conform")
 if conform then
   conform.setup({
@@ -241,15 +267,14 @@ if lint then
   })
 end
 
--- 6. DAP (debugging)
+-- 6. DAP (Debugging)
 local dap = safe_require("dap")
 local dapui = safe_require("dapui")
 if dap and dapui then
   dapui.setup()
-  require("dap").listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
-  require("dap").listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
+  dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
+  dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
 
-  -- Debug keybindings (F5 = continue, like VS Code)
   vim.keymap.set("n", "<F5>", function() dap.continue() end, { desc = "Debug: Continue" })
   vim.keymap.set("n", "<F10>", function() dap.step_over() end, { desc = "Debug: Step over" })
   vim.keymap.set("n", "<F11>", function() dap.step_into() end, { desc = "Debug: Step into" })
@@ -257,32 +282,42 @@ if dap and dapui then
   vim.keymap.set("n", "<leader>b", function() dap.toggle_breakpoint() end, { desc = "Debug: Toggle breakpoint" })
 end
 
--- THEME & UI -----------------------------------------------------------------
+-- THEME & UI ----------------------------------------------------------------
 vim.opt.termguicolors = true
 vim.opt.background = "dark"
--- Try to set gruvbox, fallback to default if not installed
-local theme_ok, _ = pcall(vim.cmd, "colorscheme gruvbox")
-if not theme_ok then
-  vim.notify("Gruvbox theme not loaded yet. Run :PlugInstall", vim.log.levels.INFO)
-end
+pcall(vim.cmd, "colorscheme gruvbox")
 
--- NERDTree config (your original ignores)
+-- Fix floating window backgrounds to match the theme
+vim.api.nvim_create_autocmd("ColorScheme", {
+  pattern = "*",
+  callback = function()
+    -- Links floating windows to standard editor background
+    vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
+    -- Links the border background to Normal, but keeps standard border colors
+    vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none", fg = "#a89984" }) 
+  end,
+})
+
+-- Trigger it immediately for the first load
+vim.cmd("doautocmd ColorScheme")
+
+-- NERDTree config
 vim.g.NERDTreeIgnore = {
   [[\.git$]], [[\.jpg$]], [[\.png$]], [[\.gif$]], [[\.mp4$]], [[\.ogg$]],
   [[\.iso$]], [[\.pdf$]], [[\.pyc$]], [[\.odt$]], [[\.db$]]
 }
 
--- MAPPINGS (ported + modernized) ---------------------------------------------
--- (mapleader is set at the top of this file)
-
--- Your original mappings
+-- MAPPINGS -------------------------------------------------------------------
 vim.keymap.set("i", "jj", "<Esc>")
 vim.keymap.set("n", "o", "o<Esc>")
 vim.keymap.set("n", "O", "O<Esc>")
 vim.keymap.set("n", "n", "nzz")
 vim.keymap.set("n", "N", "Nzz")
 vim.keymap.set("n", "Y", "y$")
-vim.keymap.set("n", "<F6>", ":w<CR>:!clear<CR>:!python3 %<CR>", { silent = true }) -- Python runner
+
+vim.keymap.set("n", "<F6>", ":w<CR>:!clear<CR>:!python3 %<CR>", { silent = true })
+
+-- Window navigation
 vim.keymap.set("n", "<C-j>", "<C-w>j")
 vim.keymap.set("n", "<C-k>", "<C-w>k")
 vim.keymap.set("n", "<C-h>", "<C-w>h")
@@ -299,18 +334,18 @@ vim.keymap.set("n", "<leader>tn", "<cmd>tabnew<cr>", { desc = "New tab" })
 vim.keymap.set("n", "<leader>ff", "<cmd>Files<cr>", { desc = "FZF: Find files" })
 vim.keymap.set("n", "<leader>fb", "<cmd>Buffers<cr>", { desc = "FZF: Buffers" })
 vim.keymap.set("n", "<leader>fr", "<cmd>Rg<cr>", { desc = "FZF: Ripgrep" })
-vim.keymap.set("n", "<leader>fl", "<cmd>Lines<cr>", { desc = "FZF: Lines in buffers" })
-vim.keymap.set("n", "<leader>r", "<cmd>QuickRun<cr>", { desc = "QuickRun (Code Runner)" })
+vim.keymap.set("n", "<leader>fl", "<cmd>Lines<cr>", { desc = "FZF: Lines" })
+vim.keymap.set("n", "<leader>r", "<cmd>QuickRun<cr>", { desc = "QuickRun" })
 
--- Which-Key groups (beautiful VS Code style menu)
+-- Which-Key groups
 if wk then
   wk.add({
-    { "<leader>n", group = " NERDTree" },
-    { "<leader>f", group = "󰈞 FZF" },
-    { "<leader>l", group = "󰢹 LSP" },
-    { "<leader>d", group = " Debug" },
+    { "<leader>n", group = "NERDTree" },
+    { "<leader>f", group = "FZF" },
+    { "<leader>l", group = "LSP" },
+    { "<leader>d", group = "Debug" },
+    { "<leader>c", group = "Code" },
   })
 end
 
--- Final message
-print("✓ Neovim config loaded – full VS Code-like LSP, linting, debugging & which-key ready!")
+print("✓ Neovim config loaded with enhanced LSP utilities!")
