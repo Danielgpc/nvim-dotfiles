@@ -23,10 +23,14 @@ Modern Neovim setup with **full LSP, linting, formatting, and debugging** – ex
 ### C / C++ Support
 Create a `.clangd` file in your project root – works exactly like VS Code’s `c_cpp_properties.json`.
 
-## Installation (one command)
+## Installation
 
 ```bash
-git clone https://github.com/Danielgpc/nvim-dotfiles.git ~/.nvim-dotfiles
-cd ~/.nvim-dotfiles
-chmod +x install.sh
-./install.sh
+# Back up any existing config first (if needed)
+mv ~/.config/nvim ~/.config/nvim.bak 2>/dev/null || true
+
+# Clone directly into Neovim's config directory
+git clone https://github.com/Danielgpc/nvim-dotfiles.git ~/.config/nvim
+
+# Open Neovim – vim-plug and all plugins will auto-install
+nvim
