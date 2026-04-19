@@ -21,38 +21,81 @@
 | Mapping      | Action                     |
 |--------------|----------------------------|
 | `gd`         | Go to definition           |
+| `gD`         | Go to declaration          |
+| `gi`         | Go to implementation       |
+| `gr`         | Find references            |
 | `K`          | Hover documentation        |
 | `<leader>ca` | Code action                |
 | `<leader>cd` | Show diagnostics           |
-| `<leader>rn` | Rename                     |
+| `<leader>cf` | Format buffer              |
+| `<leader>cl` | Run CodeLens               |
+| `<leader>ls` | Workspace symbols          |
+| `<leader>rn` | Rename symbol              |
+| `[d`         | Previous diagnostic        |
+| `]d`         | Next diagnostic            |
 
 ### Debug
-| Mapping   | Action              |
-|-----------|---------------------|
-| `<F5>`    | Continue            |
-| `<F10>`   | Step over           |
-| `<F11>`   | Step into           |
-| `<leader>b` | Toggle breakpoint |
+| Mapping     | Action              |
+|-------------|---------------------|
+| `<F5>`      | Continue            |
+| `<F10>`     | Step over           |
+| `<F11>`     | Step into           |
+| `<F12>`     | Step out            |
+| `<leader>b` | Toggle breakpoint   |
 
 ### Plugins
 | Mapping     | Action                     |
 |-------------|----------------------------|
 | `<leader>nn`| Toggle NERDTree            |
-| `<leader>ff`| FZF files                  |
+| `<leader>ff`| FZF: Find files            |
+| `<leader>fb`| FZF: Buffers               |
+| `<leader>fr`| FZF: Ripgrep               |
+| `<leader>fl`| FZF: Lines                 |
 | `<leader>lg`| Lazygit (floaterm)         |
+| `<leader>tn`| New tab                    |
 | `<leader>r` | QuickRun (code runner)     |
+| `<F6>`      | Clear & run Python (F6)    |
 
-## Plugins (updated list)
+### Completion
+| Mapping     | Mode       | Action                     |
+|-------------|-----------|----------------------------|
+| `<C-Space>` | Insert     | Trigger completion         |
+| `<C-b>`     | Insert     | Scroll docs up             |
+| `<C-f>`     | Insert     | Scroll docs down           |
+| `<C-e>`     | Insert     | Abort completion           |
+| `<CR>`      | Insert     | Confirm selection          |
+| `<Tab>`     | Insert     | Next item / expand snippet |
+| `<S-Tab>`   | Insert     | Previous item / jump back  |
+
+## LSP Servers Configured
+- lua_ls, pyright, clangd, jsonls, yamlls, html, cssls, ts_ls, bashls, marksman
+
+## Formatters (conform.nvim)
+- Lua: stylua
+- Python: black
+- C/C++: clang_format
+- JSON/YAML/HTML/CSS/JavaScript: prettier
+
+## Linters (nvim-lint)
+- Python: pylint
+- C/C++: cppcheck
+- Lua: luacheck
+
+## Debuggers (nvim-dap)
+- C/C++: codelldb
+- Python: debugpy
+
+## Plugins
 
 **Kept from your vimrc:**
-- NERDTree, Gruvbox, vim-airline, vim-devicons, vim-floaterm, vim-gitgutter, windsuf.vim, FZF + fzf.vim, vim-quickrun
+- NERDTree, Gruvbox, vim-airline, vim-devicons, vim-floaterm, vim-gitgutter, FZF + fzf.vim, vim-quickrun
 
-**New (removed Coc):**
-- mason.nvim + mason-lspconfig + nvim-lspconfig (LSP)
-- nvim-cmp + LuaSnip (completion)
-- conform.nvim + nvim-lint (linting & formatting)
+**New (replaced Coc with modern LSP stack):**
+- mason.nvim + mason-lspconfig + nvim-lspconfig (LSP server management & setup)
+- nvim-cmp + LuaSnip + cmp sources (completion engine)
+- conform.nvim + nvim-lint (formatting & linting)
 - nvim-dap + dap-ui + mason-nvim-dap (debugging)
-- which-key.nvim
+- which-key.nvim (key bindings menu)
 
 ## UI & Theme Customizations
 - **Theme:** Gruvbox (Dark mode)
