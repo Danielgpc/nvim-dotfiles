@@ -17,8 +17,8 @@ vim.cmd("syntax on")
 
 vim.opt.number = true
 vim.opt.cursorline = true
-vim.opt.shiftwidth = 4
-vim.opt.tabstop = 4
+vim.opt.shiftwidth = 2
+vim.opt.tabstop = 2
 vim.opt.expandtab = true
 vim.opt.scrolloff = 10
 vim.opt.wrap = false
@@ -44,16 +44,19 @@ vim.opt.undoreload = 10000
 -- Bootstrap vim-plug
 local plug_path = config_dir .. "/autoload/plug.vim"
 if vim.fn.filereadable(plug_path) == 0 then
-  vim.fn.system({
-    "curl", "-fLo", plug_path, "--create-dirs",
-    "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim",
-  })
-  vim.api.nvim_create_autocmd("VimEnter", {
-    once = true,
-    callback = function()
-      vim.cmd("PlugInstall --sync | quit")
-    end,
-  })
+	vim.fn.system({
+		"curl",
+		"-fLo",
+		plug_path,
+		"--create-dirs",
+		"https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim",
+	})
+	vim.api.nvim_create_autocmd("VimEnter", {
+		once = true,
+		callback = function()
+			vim.cmd("PlugInstall --sync | quit")
+		end,
+	})
 end
 
 -- PLUGINS --------------------------------------------------------------------
@@ -101,84 +104,96 @@ vim.cmd([[
 
 -- SAFE REQUIRE ---------------------------------------------------------------
 local function safe_require(module)
-  local ok, result = pcall(require, module)
-  if not ok then
-    vim.notify("Failed to load " .. module .. ": " .. result, vim.log.levels.WARN)
-    return nil
-  end
-  return result
+	local ok, result = pcall(require, module)
+	if not ok then
+		vim.notify("Failed to load " .. module .. ": " .. result, vim.log.levels.WARN)
+		return nil
+	end
+	return result
 end
 
 -- PLUGIN SETUP ---------------------------------------------------------------
 -- 1. Which-Key
 local wk = safe_require("which-key")
 if wk then
-  wk.setup({
-    plugins = { spelling = { enabled = true } },
-    win = { border = "rounded" },
-  })
+	wk.setup({
+		plugins = { spelling = { enabled = true } },
+		win = { border = "rounded" },
+	})
 end
 
 -- 2. Mason
 if safe_require("mason") then
-  require("mason").setup()
+	require("mason").setup()
 end
 
 local mason_lspconfig = safe_require("mason-lspconfig")
 if mason_lspconfig then
-  mason_lspconfig.setup({
-    ensure_installed = {
-      "lua_ls", "pyright", "clangd", "jsonls", "yamlls",
-      "html", "cssls", "ts_ls", "bashls", "marksman"
-    },
-  })
+	mason_lspconfig.setup({
+		ensure_installed = {
+			"lua_ls",
+			"pyright",
+			"clangd",
+			"jsonls",
+			"yamlls",
+			"html",
+			"cssls",
+			"ts_ls",
+			"bashls",
+			"marksman",
+		},
+	})
 end
 
 if safe_require("mason-nvim-dap") then
-  require("mason-nvim-dap").setup({
-    ensure_installed = { "codelldb", "debugpy" },
-    handlers = {},
-  })
+	require("mason-nvim-dap").setup({
+		ensure_installed = { "codelldb", "debugpy" },
+		handlers = {},
+	})
 end
 
 -- 3. nvim-cmp
 local cmp = safe_require("cmp")
 local luasnip = safe_require("luasnip")
 if cmp and luasnip then
-  cmp.setup({
-    snippet = { expand = function(args) luasnip.lsp_expand(args.body) end },
-    mapping = cmp.mapping.preset.insert({
-      ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-      ["<C-f>"] = cmp.mapping.scroll_docs(4),
-      ["<C-Space>"] = cmp.mapping.complete(),
-      ["<C-e>"] = cmp.mapping.abort(),
-      ["<CR>"] = cmp.mapping.confirm({ select = true }),
-      ["<Tab>"] = cmp.mapping(function(fallback)
-        if cmp.visible() then
-          cmp.select_next_item()
-        elseif luasnip.expand_or_jumpable() then
-          luasnip.expand_or_jump()
-        else
-          fallback()
-        end
-      end, { "i", "s" }),
-      ["<S-Tab>"] = cmp.mapping(function(fallback)
-        if cmp.visible() then
-          cmp.select_prev_item()
-        elseif luasnip.jumpable(-1) then
-          luasnip.jump(-1)
-        else
-          fallback()
-        end
-      end, { "i", "s" }),
-    }),
-    sources = cmp.config.sources({
-      { name = "nvim_lsp" },
-      { name = "luasnip" },
-      { name = "buffer" },
-      { name = "path" },
-    }),
-  })
+	cmp.setup({
+		snippet = {
+			expand = function(args)
+				luasnip.lsp_expand(args.body)
+			end,
+		},
+		mapping = cmp.mapping.preset.insert({
+			["<C-b>"] = cmp.mapping.scroll_docs(-4),
+			["<C-f>"] = cmp.mapping.scroll_docs(4),
+			["<C-Space>"] = cmp.mapping.complete(),
+			["<C-e>"] = cmp.mapping.abort(),
+			["<CR>"] = cmp.mapping.confirm({ select = true }),
+			["<Tab>"] = cmp.mapping(function(fallback)
+				if cmp.visible() then
+					cmp.select_next_item()
+				elseif luasnip.expand_or_jumpable() then
+					luasnip.expand_or_jump()
+				else
+					fallback()
+				end
+			end, { "i", "s" }),
+			["<S-Tab>"] = cmp.mapping(function(fallback)
+				if cmp.visible() then
+					cmp.select_prev_item()
+				elseif luasnip.jumpable(-1) then
+					luasnip.jump(-1)
+				else
+					fallback()
+				end
+			end, { "i", "s" }),
+		}),
+		sources = cmp.config.sources({
+			{ name = "nvim_lsp" },
+			{ name = "luasnip" },
+			{ name = "buffer" },
+			{ name = "path" },
+		}),
+	})
 end
 
 local cmp_nvim_lsp = safe_require("cmp_nvim_lsp")
@@ -193,93 +208,128 @@ vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.s
 -- ===========================================
 
 local on_attach = function(client, bufnr)
-  local buf = vim.lsp.buf
-  local opts = { buffer = bufnr, silent = true }
+	local buf = vim.lsp.buf
+	local opts = { buffer = bufnr, silent = true }
 
-  -- === CORE LSP UTILITIES (VS Code style) ===
-  vim.keymap.set("n", "gd", buf.definition, vim.tbl_extend("force", opts, { desc = "Go to Definition" }))
-  vim.keymap.set("n", "gD", buf.declaration, vim.tbl_extend("force", opts, { desc = "Go to Declaration" }))
-  vim.keymap.set("n", "gi", buf.implementation, vim.tbl_extend("force", opts, { desc = "Go to Implementation" }))
-  vim.keymap.set("n", "gr", buf.references, vim.tbl_extend("force", opts, { desc = "Find References" }))
-  vim.keymap.set("n", "K", buf.hover, vim.tbl_extend("force", opts, { desc = "Hover Documentation" }))
-  vim.keymap.set("n", "<leader>rn", buf.rename, vim.tbl_extend("force", opts, { desc = "Rename Symbol" }))
-  vim.keymap.set("n", "<leader>ca", buf.code_action, vim.tbl_extend("force", opts, { desc = "Code Action" }))
-  vim.keymap.set("n", "<leader>cd", vim.diagnostic.open_float, vim.tbl_extend("force", opts, { desc = "Show Diagnostics" }))
+	-- === CORE LSP UTILITIES (VS Code style) ===
+	vim.keymap.set("n", "gd", buf.definition, vim.tbl_extend("force", opts, { desc = "Go to Definition" }))
+	vim.keymap.set("n", "gD", buf.declaration, vim.tbl_extend("force", opts, { desc = "Go to Declaration" }))
+	vim.keymap.set("n", "gi", buf.implementation, vim.tbl_extend("force", opts, { desc = "Go to Implementation" }))
+	vim.keymap.set("n", "gr", buf.references, vim.tbl_extend("force", opts, { desc = "Find References" }))
+	vim.keymap.set("n", "K", buf.hover, vim.tbl_extend("force", opts, { desc = "Hover Documentation" }))
+	vim.keymap.set("n", "<leader>rn", buf.rename, vim.tbl_extend("force", opts, { desc = "Rename Symbol" }))
+	vim.keymap.set("n", "<leader>ca", buf.code_action, vim.tbl_extend("force", opts, { desc = "Code Action" }))
+	vim.keymap.set(
+		"n",
+		"<leader>cd",
+		vim.diagnostic.open_float,
+		vim.tbl_extend("force", opts, { desc = "Show Diagnostics" })
+	)
 
-  -- Additional useful LSP utilities
-  vim.keymap.set("n", "<leader>cl", function() vim.lsp.codelens.run() end, vim.tbl_extend("force", opts, { desc = "Run CodeLens" }))
-  vim.keymap.set("n", "<leader>cf", function() vim.lsp.buf.format({ async = true }) end, vim.tbl_extend("force", opts, { desc = "Format Buffer" }))
+	-- Additional useful LSP utilities
+	vim.keymap.set("n", "<leader>cl", function()
+		vim.lsp.codelens.run()
+	end, vim.tbl_extend("force", opts, { desc = "Run CodeLens" }))
+	vim.keymap.set("n", "<leader>cf", function()
+		vim.lsp.buf.format({ async = true })
+	end, vim.tbl_extend("force", opts, { desc = "Format Buffer" }))
 
-  -- Telescope-like LSP navigation (if you add telescope later)
-  vim.keymap.set("n", "<leader>ls", function() vim.lsp.buf.workspace_symbol() end, vim.tbl_extend("force", opts, { desc = "Workspace Symbols" }))
+	-- Telescope-like LSP navigation (if you add telescope later)
+	vim.keymap.set("n", "<leader>ls", function()
+		vim.lsp.buf.workspace_symbol()
+	end, vim.tbl_extend("force", opts, { desc = "Workspace Symbols" }))
 
-  -- Diagnostic navigation
-  vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, vim.tbl_extend("force", opts, { desc = "Previous Diagnostic" }))
-  vim.keymap.set("n", "]d", vim.diagnostic.goto_next, vim.tbl_extend("force", opts, { desc = "Next Diagnostic" }))
+	-- Diagnostic navigation
+	vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, vim.tbl_extend("force", opts, { desc = "Previous Diagnostic" }))
+	vim.keymap.set("n", "]d", vim.diagnostic.goto_next, vim.tbl_extend("force", opts, { desc = "Next Diagnostic" }))
 end
 
 -- Setup all LSP servers
 if lspconfig then
-  local servers = {
-    "lua_ls", "pyright", "clangd", "jsonls", "yamlls",
-    "html", "cssls", "ts_ls", "bashls", "marksman",
-  }
+	local servers = {
+		"lua_ls",
+		"pyright",
+		"clangd",
+		"jsonls",
+		"yamlls",
+		"html",
+		"cssls",
+		"ts_ls",
+		"bashls",
+		"marksman",
+	}
 
-  for _, server_name in ipairs(servers) do
-    if lspconfig[server_name] then
-      lspconfig[server_name].setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-      })
-    end
-  end
+	for _, server_name in ipairs(servers) do
+		if lspconfig[server_name] then
+			lspconfig[server_name].setup({
+				on_attach = on_attach,
+				capabilities = capabilities,
+			})
+		end
+	end
 end
 
 -- 5. Conform + nvim-lint (unchanged)
 local conform = safe_require("conform")
 if conform then
-  conform.setup({
-    formatters_by_ft = {
-      lua = { "stylua" },
-      python = { "black" },
-      c = { "clang_format" },
-      cpp = { "clang_format" },
-      json = { "prettier" },
-      yaml = { "prettier" },
-      html = { "prettier" },
-      css = { "prettier" },
-      javascript = { "prettier" },
-    },
-    format_on_save = { timeout_ms = 500, lsp_fallback = true },
-  })
+	conform.setup({
+		formatters_by_ft = {
+			lua = { "stylua" },
+			python = { "black" },
+			c = { "clang_format" },
+			cpp = { "clang_format" },
+			json = { "prettier" },
+			yaml = { "prettier" },
+			html = { "prettier" },
+			css = { "prettier" },
+			javascript = { "prettier" },
+		},
+		format_on_save = { timeout_ms = 500, lsp_fallback = true },
+	})
 end
 
 local lint = safe_require("lint")
 if lint then
-  lint.linters_by_ft = {
-    python = { "pylint" },
-    cpp = { "cppcheck" },
-    c = { "cppcheck" },
-    lua = { "luacheck" },
-  }
-  vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-    callback = function() lint.try_lint() end,
-  })
+	lint.linters_by_ft = {
+		python = { "pylint" },
+		cpp = { "cppcheck" },
+		c = { "cppcheck" },
+		lua = { "luacheck" },
+	}
+	vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+		callback = function()
+			lint.try_lint()
+		end,
+	})
 end
 
 -- 6. DAP (Debugging)
 local dap = safe_require("dap")
 local dapui = safe_require("dapui")
 if dap and dapui then
-  dapui.setup()
-  dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
-  dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
+	dapui.setup()
+	dap.listeners.after.event_initialized["dapui_config"] = function()
+		dapui.open()
+	end
+	dap.listeners.before.event_terminated["dapui_config"] = function()
+		dapui.close()
+	end
 
-  vim.keymap.set("n", "<F5>", function() dap.continue() end, { desc = "Debug: Continue" })
-  vim.keymap.set("n", "<F10>", function() dap.step_over() end, { desc = "Debug: Step over" })
-  vim.keymap.set("n", "<F11>", function() dap.step_into() end, { desc = "Debug: Step into" })
-  vim.keymap.set("n", "<F12>", function() dap.step_out() end, { desc = "Debug: Step out" })
-  vim.keymap.set("n", "<leader>b", function() dap.toggle_breakpoint() end, { desc = "Debug: Toggle breakpoint" })
+	vim.keymap.set("n", "<F5>", function()
+		dap.continue()
+	end, { desc = "Debug: Continue" })
+	vim.keymap.set("n", "<F10>", function()
+		dap.step_over()
+	end, { desc = "Debug: Step over" })
+	vim.keymap.set("n", "<F11>", function()
+		dap.step_into()
+	end, { desc = "Debug: Step into" })
+	vim.keymap.set("n", "<F12>", function()
+		dap.step_out()
+	end, { desc = "Debug: Step out" })
+	vim.keymap.set("n", "<leader>b", function()
+		dap.toggle_breakpoint()
+	end, { desc = "Debug: Toggle breakpoint" })
 end
 
 -- THEME & UI ----------------------------------------------------------------
@@ -289,13 +339,13 @@ pcall(vim.cmd, "colorscheme gruvbox")
 
 -- Fix floating window backgrounds to match the theme
 vim.api.nvim_create_autocmd("ColorScheme", {
-  pattern = "*",
-  callback = function()
-    -- Links floating windows to standard editor background
-    vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
-    -- Links the border background to Normal, but keeps standard border colors
-    vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none", fg = "#a89984" }) 
-  end,
+	pattern = "*",
+	callback = function()
+		-- Links floating windows to standard editor background
+		vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
+		-- Links the border background to Normal, but keeps standard border colors
+		vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none", fg = "#a89984" })
+	end,
 })
 
 -- Trigger it immediately for the first load
@@ -303,8 +353,17 @@ vim.cmd("doautocmd ColorScheme")
 
 -- NERDTree config
 vim.g.NERDTreeIgnore = {
-  [[\.git$]], [[\.jpg$]], [[\.png$]], [[\.gif$]], [[\.mp4$]], [[\.ogg$]],
-  [[\.iso$]], [[\.pdf$]], [[\.pyc$]], [[\.odt$]], [[\.db$]]
+	[[\.git$]],
+	[[\.jpg$]],
+	[[\.png$]],
+	[[\.gif$]],
+	[[\.mp4$]],
+	[[\.ogg$]],
+	[[\.iso$]],
+	[[\.pdf$]],
+	[[\.pyc$]],
+	[[\.odt$]],
+	[[\.db$]],
 }
 
 -- MAPPINGS -------------------------------------------------------------------
@@ -339,13 +398,13 @@ vim.keymap.set("n", "<leader>r", "<cmd>QuickRun<cr>", { desc = "QuickRun" })
 
 -- Which-Key groups
 if wk then
-  wk.add({
-    { "<leader>n", group = "NERDTree" },
-    { "<leader>f", group = "FZF" },
-    { "<leader>l", group = "LSP" },
-    { "<leader>d", group = "Debug" },
-    { "<leader>c", group = "Code" },
-  })
+	wk.add({
+		{ "<leader>n", group = "NERDTree" },
+		{ "<leader>f", group = "FZF" },
+		{ "<leader>l", group = "LSP" },
+		{ "<leader>d", group = "Debug" },
+		{ "<leader>c", group = "Code" },
+	})
 end
 
 print("✓ Neovim config loaded with enhanced LSP utilities!")
