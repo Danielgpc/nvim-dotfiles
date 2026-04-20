@@ -16,6 +16,7 @@ vim.cmd("filetype plugin indent on")
 vim.cmd("syntax on")
 
 vim.opt.number = true
+vim.opt.relativenumber = true
 vim.opt.cursorline = true
 vim.opt.shiftwidth = 2
 vim.opt.tabstop = 2
@@ -66,13 +67,22 @@ vim.cmd([[
     " Original plugins
     Plug 'preservim/nerdtree'
     Plug 'morhetz/gruvbox'
-    Plug 'vim-airline/vim-airline'
+    Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
+    Plug 'nvim-lualine/lualine.nvim'
+    Plug 'nvim-tree/nvim-web-devicons'
     Plug 'ryanoasis/vim-devicons'
     Plug 'voldikss/vim-floaterm'
     Plug 'airblade/vim-gitgutter'
     Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
     Plug 'junegunn/fzf.vim'
     Plug 'thinca/vim-quickrun'
+
+    " UI & Aesthetics
+    Plug 'lukas-reineke/indent-blankline.nvim'
+    Plug 'nvimdev/dashboard-nvim'
+    Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
+    Plug 'goolord/alpha-nvim'
+    Plug 'MaximilianLloyd/ascii.nvim'
 
     " Modern LSP stack
     Plug 'williamboman/mason.nvim'
@@ -194,13 +204,54 @@ if cmp and luasnip then
 			{ name = "path" },
 		}),
 	})
+
+	-- Cmdline completion (: commands) with Tab/S-Tab cycling
+	cmp.setup.cmdline(":", {
+		mapping = cmp.mapping.preset.cmdline({
+			["<Tab>"] = cmp.mapping(function(fallback)
+				if cmp.visible() then
+					cmp.select_next_item()
+				else
+					fallback()
+				end
+			end, { "c" }),
+			["<S-Tab>"] = cmp.mapping(function(fallback)
+				if cmp.visible() then
+					cmp.select_prev_item()
+				else
+					fallback()
+				end
+			end, { "c" }),
+		}),
+		sources = cmp.config.sources({
+			{ name = "cmdline" },
+		}),
+	})
 end
 
 local cmp_nvim_lsp = safe_require("cmp_nvim_lsp")
 local capabilities = (cmp_nvim_lsp and cmp_nvim_lsp.default_capabilities()) or {}
 
 -- 4. ENHANCED LSP SETUP with rich utilities ----------------------------------
-local lspconfig = safe_require("lspconfig")
+local function setup_lsp_server(server_name, opts)
+	-- Use vim.lsp.config for Neovim 0.11+
+	local config = vim.lsp.config[server_name]
+	if config then
+		for key, value in pairs(opts) do
+			config[key] = value
+		end
+		return
+	end
+
+	-- Fallback: try using require('lspconfig') if available
+	local ok, lspconfig = pcall(require, "lspconfig")
+	if ok and lspconfig[server_name] then
+		lspconfig[server_name].setup(opts)
+		return
+	end
+
+	vim.notify("Unable to configure LSP server: " .. server_name, vim.log.levels.WARN)
+end
 
 -- === ADD THESE TWO LINES FOR LSP BORDERS ===
 vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
@@ -260,12 +311,10 @@ if lspconfig then
 	}
 
 	for _, server_name in ipairs(servers) do
-		if lspconfig[server_name] then
-			lspconfig[server_name].setup({
-				on_attach = on_attach,
-				capabilities = capabilities,
-			})
-		end
+		setup_lsp_server(server_name, {
+			on_attach = on_attach,
+			capabilities = capabilities,
+		})
 	end
 end
 
@@ -332,10 +381,59 @@ if dap and dapui then
 	end, { desc = "Debug: Toggle breakpoint" })
 end
 
+-- 7. nvim-web-devicons setup
+if safe_require("nvim-web-devicons") then
+	require("nvim-web-devicons").setup()
+end
+
+-- 8. Indent-blankline setup
+if safe_require("ibl") then
+	require("ibl").setup({
+		indent = { char = "▏", highlight = "IblIndent" },
+		scope = { char = "▎", highlight = "IblScope" },
+	})
+end
+
+-- 9. Treesitter setup
+local ts_ok, ts = pcall(require, "nvim-treesitter.config")
+if ts_ok then
+	ts.setup({
+		ensure_installed = { "c", "cpp", "lua", "python", "json", "yaml", "html", "css", "javascript", "bash", "markdown" },
+		auto_install = true,
+		highlight = {
+			enable = true,
+			additional_vim_regex_highlighting = false,
+		},
+	})
+else
+	vim.notify("nvim-treesitter not properly configured. Make sure nvim-treesitter is installed.", vim.log.levels.WARN)
+end
+
+-- 10. Dashboard setup
+if safe_require("dashboard") then
+	require("dashboard").setup({
+		theme = "doom",
+		config = {
+			center = {
+				{ action = "NERDTreeToggle", desc = " NERDTree", key = "n" },
+				{ action = "Files", desc = " Find Files", key = "f" },
+				{ action = "FloatermNew lazygit", desc = " Lazygit", key = "g" },
+			},
+		},
+	})
+end
+
 -- THEME & UI ----------------------------------------------------------------
 vim.opt.termguicolors = true
 vim.opt.background = "dark"
-pcall(vim.cmd, "colorscheme gruvbox")
+vim.opt.laststatus = 3
+vim.opt.showtabline = 2
+
+-- Catppuccin theme (active)
+pcall(vim.cmd, "colorscheme catppuccin-mocha")
+
+-- Gruvbox (kept commented for easy switching)
+-- pcall(vim.cmd, "colorscheme gruvbox")
 
 -- Fix floating window backgrounds to match the theme
 vim.api.nvim_create_autocmd("ColorScheme", {
@@ -344,17 +442,143 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 		-- Links floating windows to standard editor background
 		vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
 		-- Links the border background to Normal, but keeps standard border colors
-		vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none", fg = "#a89984" })
+		vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none" })
 	end,
 })
 
 -- Trigger it immediately for the first load
 vim.cmd("doautocmd ColorScheme")
 
--- NERDTree config
+-- Lualine setup (prettier with icons and theme)
+if safe_require("lualine") then
+	require("lualine").setup({
+		options = {
+			theme = "catppuccin-mocha",
+			component_separators = { left = "", right = "" },
+			section_separators = { left = "", right = "" },
+			disabled_filetypes = { "alpha", "dashboard", "NvimTree" },
+			globalstatus = true,
+			refresh = { statusline = 1000, tabline = 1000 },
+			icons_enabled = true,
+			always_divide_middle = false,
+		},
+		sections = {
+			lualine_a = {
+				{ "mode", fmt = function(str) return str:sub(1, 1) end },
+			},
+			lualine_b = {
+				{ "branch", icon = "" },
+				{
+					"diff",
+					symbols = { added = " ", modified = "柳 ", removed = " " },
+				},
+			},
+			lualine_c = {
+				{ "filename", file_status = true, path = 1 },
+				{
+					"diagnostics",
+					sources = { "nvim_diagnostic" },
+					symbols = { error = "", warn = "", info = "", hint = "" },
+				},
+			},
+			lualine_x = {
+				{ "encoding", fmt = string.upper },
+				{
+					"fileformat",
+					icons_enabled = true,
+					symbols = { unix = "LF", dos = "CRLF", mac = "CR" },
+				},
+				{ "filetype", icon_only = true, padding = { left = 1, right = 0 } },
+			},
+			lualine_y = { "progress" },
+			lualine_z = { "location" },
+		},
+		tabline = {
+			lualine_a = { { "buffers", symbols = { alternate_file = "" } } },
+			lualine_z = { "tabs" },
+		},
+		inactive_sections = {
+			lualine_a = {},
+			lualine_b = {},
+			lualine_c = { "filename" },
+			lualine_x = { "location" },
+			lualine_y = {},
+			lualine_z = {},
+		},
+	})
+end
+
+-- Alpha startup screen (lazy.nvim-style)
+if safe_require("alpha") then
+	local alpha = require("alpha")
+	local dashboard = require("alpha.themes.dashboard")
+
+	-- Load random ASCII art from ascii.nvim - try multiple sources
+	local all_headers = {}
+	
+	-- Try to load from neovim.lua
+	local nvim_ok, nvim_ascii = pcall(require, "ascii.text.neovim")
+	if nvim_ok then
+		for _, v in ipairs({ nvim_ascii.default1, nvim_ascii.default2, nvim_ascii.ogre, nvim_ascii.slant_relief, nvim_ascii.ansi_shadow }) do
+			if v then table.insert(all_headers, v) end
+		end
+	end
+	
+	-- Try to load from other text files
+	for _, name in ipairs({ "art", "dune", "graffiti", "isometric1", "isometric2", "isometric3", "letters", "modscript", "poison", "runic", "small", "soft", "standard" }) do
+		local ok, ascii_mod = pcall(require, "ascii.text." .. name)
+		if ok then
+			-- Try to get common option names
+			for _, opt in ipairs({ "default", "default1", "default2", "small", "big", "small_fancy", "big_fancy" }) do
+				if ascii_mod[opt] then
+					table.insert(all_headers, ascii_mod[opt])
+				end
+			end
+		end
+	end
+	
+	local header
+	if #all_headers > 0 then
+		header = all_headers[math.random(1, #all_headers)]
+	else
+		header = {
+			"░█▀▀█ ░█▀▀█ ░█▀▀█ ░█▀▀█ ░█─── ░█▀▀█ ░█▀▀█ ░█▀▀█",
+			"░█──█ ░█▄▄▀ ░█▄▄█ ░█▄▄█ ░█─── ░█▄▄▀ ░█▄▄█ ░█▄▄▀",
+			"░█▄▄█ ░█─░█ ░█─░█ ░█─░█ ░█▄▄█ ░█─░█ ░█─░█ ░█─░█",
+		}
+	end
+
+	dashboard.section.header.val = header
+	dashboard.section.header.opts = { hl = "Title", position = "center" }
+	dashboard.section.buttons.val = {
+		dashboard.button("e", "  New file", ":ene <BAR> startinsert<CR>"),
+		dashboard.button("f", "  Find file", ":Files<CR>"),
+		dashboard.button("r", "  Recent files", ":History<CR>"),		dashboard.button("i", "  Install plugins", ":PlugInstall<CR>"),		dashboard.button("u", "  Update plugins", ":PlugUpdate<CR>"),
+		dashboard.button("c", "  Edit config", ":edit $MYVIMRC<CR>"),
+		dashboard.button("g", "  Lazygit", ":FloatermNew lazygit<CR>"),
+		dashboard.button("q", "󰈆  Quit", ":qa<CR>"),
+	}
+	dashboard.section.buttons.opts = { hl = "Function", position = "center", spacing = 1 }
+	dashboard.section.footer.val = "catppuccin + lualine | Neovim"
+	dashboard.section.footer.opts = { hl = "Comment", position = "center" }
+
+	-- Add margins to center content vertically
+	dashboard.opts.margin = 10
+
+	alpha.setup(dashboard.opts)
+end
+
+-- NERDTree config with enhanced icons
+vim.g.NERDTreeShowHidden = 1
+vim.g.NERDTreeHighlightFolders = 1
+vim.g.NERDTreeHighlightFoldersFullName = 1
+vim.g.NERDTreeFileExtensionHighlightFullName = 1
+vim.g.NERDTreeExactMatchHighlightFullName = 1
+vim.g.NERDTreePatternMatchHighlightFullName = 1
+
 vim.g.NERDTreeIgnore = {
 	[[\.git$]],
-	[[\.jpg$]],
+	[[\.jpg$]],https://github.com/MaximilianLloyd/ascii.nvim/blob/master/lua/ascii/text/neovim.lua
 	[[\.png$]],
 	[[\.gif$]],
 	[[\.mp4$]],
