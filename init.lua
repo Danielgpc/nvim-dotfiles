@@ -578,7 +578,7 @@ vim.g.NERDTreePatternMatchHighlightFullName = 1
 
 vim.g.NERDTreeIgnore = {
 	[[\.git$]],
-	[[\.jpg$]],https://github.com/MaximilianLloyd/ascii.nvim/blob/master/lua/ascii/text/neovim.lua
+	[[\.jpg$]],
 	[[\.png$]],
 	[[\.gif$]],
 	[[\.mp4$]],
